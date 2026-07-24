@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>כניסה — סורק הכסף</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&family=Secular+One&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0F17; --panel:#131A26; --panel-2:#1A2333; --line:#232E42;
+    --gold:#E8C468; --gold-deep:#B8923D; --text:#E7ECF4; --muted:#8B95A7; --down:#F87171;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--text); font-family:'Heebo',system-ui,sans-serif;
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+    background-image:radial-gradient(1200px 500px at 85% -10%,rgba(232,196,104,.07),transparent 60%);
+  }
+  .card{
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid var(--line); border-radius:16px; padding:32px; width:100%; max-width:360px;
+  }
+  h1{font-family:'Secular One','Heebo',sans-serif; font-size:26px; margin-bottom:6px}
+  h1 .coin{color:var(--gold)}
+  p.sub{color:var(--muted); font-size:14px; margin-bottom:22px}
+  input{
+    width:100%; background:rgba(11,15,23,.6); border:1px solid var(--line); border-radius:12px;
+    color:var(--text); font-family:'Heebo'; font-size:16px; padding:12px 14px; margin-bottom:14px;
+  }
+  input:focus-visible, button:focus-visible{outline:3px solid var(--gold); outline-offset:2px}
+  button{
+    width:100%; background:linear-gradient(135deg,var(--gold),var(--gold-deep));
+    color:#181206; border:none; border-radius:999px; padding:13px; font-family:'Heebo'; font-weight:800;
+    font-size:16px; cursor:pointer;
+  }
+  .err{color:var(--down); font-size:14px; margin-top:12px; display:none}
+</style>
+</head>
+<body>
+  <form class="card" id="loginForm">
+    <h1>סורק <span class="coin">הכסף</span></h1>
+    <p class="sub">הזן סיסמה כדי להיכנס</p>
+    <input type="password" id="password" placeholder="סיסמה" autofocus>
+    <button type="submit">כניסה</button>
+    <div class="err" id="err">סיסמה שגויה — נסה שוב</div>
+  </form>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const password = document.getElementById('password').value;
+  const errEl = document.getElementById('err');
+  errEl.style.display = 'none';
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    if (res.ok) {
+      location.href = '/';
+    } else {
+      errEl.style.display = 'block';
+    }
+  } catch (e) {
+    errEl.style.display = 'block';
+  }
+});
+</script>
+</body>
+</html>

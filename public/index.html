@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>סורק הכסף</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&family=Secular+One&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0F17;
+    --panel:#131A26;
+    --panel-2:#1A2333;
+    --line:#232E42;
+    --gold:#E8C468;
+    --gold-deep:#B8923D;
+    --up:#4ADE80;
+    --down:#F87171;
+    --warn:#FBBF24;
+    --text:#E7ECF4;
+    --muted:#8B95A7;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Heebo',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+    font-size:17px;line-height:1.6;letter-spacing:0;
+    min-height:100vh;
+    background-image:radial-gradient(1200px 500px at 85% -10%,rgba(232,196,104,.07),transparent 60%),radial-gradient(900px 420px at 0% 110%,rgba(74,222,128,.05),transparent 55%);
+  }
+  .wrap{max-width:980px;margin-inline:auto;padding:20px 16px 90px}
+
+  /* ---------- Header ---------- */
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  .brand h1{font-family:'Secular One','Heebo',sans-serif;font-size:clamp(26px,5vw,38px);line-height:1.15;color:var(--text)}
+  .brand h1 .coin{color:var(--gold)}
+  .brand .sub{color:var(--muted);font-size:14px;margin-top:2px}
+  .scan-btn{
+    display:inline-flex;align-items:center;gap:10px;
+    background:linear-gradient(135deg,var(--gold),var(--gold-deep));
+    color:#181206;border:none;border-radius:999px;
+    padding:14px 26px;font-family:'Heebo';font-weight:800;font-size:18px;
+    cursor:pointer;min-height:52px;
+    box-shadow:0 6px 24px rgba(232,196,104,.25);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .scan-btn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(232,196,104,.35)}
+  .scan-btn:active{transform:translateY(0)}
+  .scan-btn:disabled{opacity:.55;cursor:wait;transform:none}
+  .scan-btn:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+  .last-scan{color:var(--muted);font-size:13px;width:100%;text-align:start}
+
+  /* ---------- Tabs ---------- */
+  .tabs{display:flex;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px;margin-bottom:20px;position:sticky;top:10px;z-index:20;backdrop-filter:blur(8px)}
+  .tab{flex:1;border:none;background:transparent;color:var(--muted);font-family:'Heebo';font-weight:600;font-size:16px;padding:12px 8px;border-radius:999px;cursor:pointer;min-height:48px;transition:all .2s}
+  .tab[aria-selected="true"]{background:var(--panel-2);color:var(--gold);box-shadow:inset 0 0 0 1px var(--line)}
+  .tab .count{font-size:12px;background:var(--line);border-radius:999px;padding:1px 8px;margin-inline-start:6px;color:var(--text)}
+
+  section[hidden]{display:none}
+
+  /* ---------- Cards ---------- */
+  .card{
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;margin-bottom:14px;
+    animation:rise .4s ease both;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  .stock-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .tkr{font-family:'Secular One';font-size:26px;color:var(--text)}
+  .tkr small{font-family:'Heebo';font-weight:400;font-size:14px;color:var(--muted);margin-inline-start:8px}
+  .price{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+  .chg{font-size:14px;font-weight:600;margin-inline-start:6px}
+  .chg.up{color:var(--up)} .chg.down{color:var(--down)}
+
+  .badge{display:inline-block;border-radius:999px;padding:4px 14px;font-size:14px;font-weight:800}
+  .badge.hold{background:rgba(74,222,128,.14);color:var(--up);border:1px solid rgba(74,222,128,.35)}
+  .badge.weak{background:rgba(251,191,36,.12);color:var(--warn);border:1px solid rgba(251,191,36,.35)}
+  .badge.broken{background:rgba(248,113,113,.12);color:var(--down);border:1px solid rgba(248,113,113,.35)}
+  .badge.check{background:rgba(139,149,167,.12);color:var(--muted);border:1px solid var(--line)}
+
+  .boxes{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
+  .box{flex:1;min-width:96px;background:rgba(11,15,23,.5);border:1px solid var(--line);border-radius:12px;padding:8px 10px;text-align:center}
+  .box .mark{font-size:20px;line-height:1}
+  .box .lbl{font-size:12px;color:var(--muted);margin-top:2px}
+  .box.ok .mark{color:var(--up)} .box.warn .mark{color:var(--warn)} .box.fail .mark{color:var(--down)}
+
+  /* --- Signature: trigger distance gauge --- */
+  .gauge{margin:10px 0 4px}
+  .gauge .lbls{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px;font-variant-numeric:tabular-nums}
+  .gauge .track{position:relative;height:10px;border-radius:999px;background:linear-gradient(to left,rgba(248,113,113,.8),rgba(251,191,36,.7) 30%,rgba(232,196,104,.55) 60%,rgba(74,222,128,.55));border:1px solid var(--line);overflow:visible}
+  .gauge .pin{position:absolute;top:50%;transform:translate(50%,-50%);width:18px;height:18px;border-radius:50%;background:var(--text);border:3px solid var(--bg);box-shadow:0 0 0 2px var(--gold), 0 2px 8px rgba(0,0,0,.6)}
+  .gauge .hint{font-size:12.5px;color:var(--muted);margin-top:6px}
+  .gauge .hint b{color:var(--text)}
+
+  .note{color:var(--muted);font-size:14.5px;margin-top:8px;border-inline-start:3px solid var(--gold-deep);padding-inline-start:10px}
+  .meta-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+  .chip{font-size:13px;color:var(--muted);background:rgba(11,15,23,.5);border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+  .chip.earn{color:var(--warn);border-color:rgba(251,191,36,.35)}
+  .link-tv{font-size:13px;color:var(--gold);text-decoration:none;border:1px solid rgba(232,196,104,.35);border-radius:999px;padding:5px 12px;transition:background .15s}
+  .link-tv:hover{background:rgba(232,196,104,.1)}
+  .mini-btn{font-size:13px;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:5px 12px;cursor:pointer;font-family:'Heebo';min-height:34px}
+  .mini-btn:hover{color:var(--text);border-color:var(--muted)}
+  .mini-btn.danger:hover{color:var(--down);border-color:var(--down)}
+  .mini-btn.gold{color:var(--gold);border-color:rgba(232,196,104,.4)}
+
+  /* ---------- Forms ---------- */
+  .panel-form{background:var(--panel);border:1px dashed var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+  .panel-form h3{font-size:16px;margin-bottom:10px;color:var(--text)}
+  .frow{display:flex;gap:8px;flex-wrap:wrap}
+  input[type=text],input[type=number],textarea,select{
+    background:rgba(11,15,23,.6);border:1px solid var(--line);border-radius:12px;
+    color:var(--text);font-family:'Heebo';font-size:16px;padding:12px 14px;
+    text-align:start;min-height:48px;flex:1;min-width:120px;
+  }
+  input{unicode-bidi:plaintext}
+  textarea{width:100%;min-height:130px;resize:vertical;line-height:1.7}
+  .btn{
+    background:var(--panel-2);border:1px solid var(--gold-deep);color:var(--gold);
+    font-family:'Heebo';font-weight:800;font-size:16px;border-radius:12px;
+    padding:12px 22px;cursor:pointer;min-height:48px;transition:all .15s
+  }
+  .btn:hover{background:rgba(232,196,104,.1)}
+  .btn:disabled{opacity:.5;cursor:wait}
+
+  /* ---------- Report ---------- */
+  .report-card{white-space:pre-wrap;font-size:16.5px;line-height:1.8}
+  .report-date{font-family:'Secular One';color:var(--gold);font-size:18px;margin-bottom:8px}
+  details.old-report{border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:10px;background:var(--panel)}
+  details.old-report summary{cursor:pointer;color:var(--muted);font-weight:600}
+  details.old-report .report-card{margin-top:10px}
+
+  /* ---------- Discovery verdicts ---------- */
+  .verdict{font-weight:800;font-size:14px}
+  .verdict.pass{color:var(--up)} .verdict.partial{color:var(--warn)} .verdict.fail{color:var(--down)}
+
+  /* ---------- Loading overlay ---------- */
+  .loading{
+    position:fixed;inset:0;background:rgba(11,15,23,.86);backdrop-filter:blur(6px);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:100
+  }
+  .loading[hidden]{display:none}
+  .coin-spin{width:64px;height:64px;border-radius:50%;border:4px solid var(--gold-deep);border-top-color:var(--gold);animation:spin 1s linear infinite;position:relative}
+  .coin-spin::after{content:'₪';position:absolute;inset:0;display:grid;place-items:center;color:var(--gold);font-size:26px;font-weight:800;animation:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading .msg{font-size:18px;font-weight:600;color:var(--text);text-align:center;padding-inline:20px}
+  .loading .small{font-size:13px;color:var(--muted)}
+
+  .empty{color:var(--muted);text-align:center;padding:36px 12px;border:1px dashed var(--line);border-radius:var(--radius)}
+  .toast{position:fixed;bottom:20px;inset-inline-start:50%;transform:translateX(50%);background:var(--panel-2);border:1px solid var(--gold-deep);color:var(--text);border-radius:12px;padding:12px 20px;z-index:110;font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+  .toast[hidden]{display:none}
+  .toast.err{border-color:var(--down)}
+
+  footer{position:fixed;bottom:0;inset-inline:0;background:rgba(11,15,23,.92);border-top:1px solid var(--line);text-align:center;padding:9px 12px;font-size:12.5px;color:var(--muted);z-index:30}
+
+  @media (max-width:560px){
+    .brand h1{font-size:26px}
+    .scan-btn{width:100%;justify-content:center}
+    .tab{font-size:14px;padding:10px 4px}
+    .tkr{font-size:22px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <h1>סורק <span class="coin">הכסף</span></h1>
+      <div class="sub">שלוש התיבות: תעשייה עולה · הכי טובה בענף · מחיר בתנופה</div>
+    </div>
+    <button class="scan-btn" id="scanBtn" onclick="runScan()">
+      <span>⟳</span> סרוק עכשיו
+    </button>
+    <div class="last-scan" id="lastScan"></div>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" id="tab-watch" onclick="showTab('watch')">מעקב <span class="count" id="cntWatch">0</span></button>
+    <button class="tab" role="tab" aria-selected="false" id="tab-disc" onclick="showTab('disc')">גילוי <span class="count" id="cntDisc">0</span></button>
+    <button class="tab" role="tab" aria-selected="false" id="tab-report" onclick="showTab('report')">דוח בוקר</button>
+  </div>
+
+  <!-- ============ WATCHLIST ============ -->
+  <section id="sec-watch">
+    <div id="watchList"></div>
+
+    <div class="panel-form">
+      <h3>הוסף מניה למעקב</h3>
+      <div class="frow">
+        <input type="text" id="addTkr" placeholder="טיקר (למשל NVDA)" aria-label="טיקר">
+        <select id="addMkt" aria-label="שוק">
+          <option value="US">ארה"ב</option>
+          <option value="TASE">ת"א</option>
+          <option value="CRYPTO">קריפטו</option>
+        </select>
+        <input type="number" id="addTrig" placeholder="טריגר שבירה ($)" aria-label="טריגר" step="any">
+        <button class="btn" onclick="addStock()">הוסף</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DISCOVERY ============ -->
+  <section id="sec-disc" hidden>
+    <div class="panel-form">
+      <h3>הדבק סיכום מפליקס (או כל מקור אחר)</h3>
+      <textarea id="felixText" placeholder="מדביקים כאן את הסיכום מ-NotebookLM... אני אחלץ את המניות ואריץ עליהן את שלוש התיבות."></textarea>
+      <div class="frow" style="margin-top:10px">
+        <button class="btn" id="felixBtn" onclick="analyzeFelix()">נתח והרץ סינון</button>
+      </div>
+    </div>
+    <div id="discList"></div>
+  </section>
+
+  <!-- ============ REPORT ============ -->
+  <section id="sec-report" hidden>
+    <div id="reportArea"></div>
+  </section>
+
+</div>
+
+<div class="loading" id="loading" hidden>
+  <div class="coin-spin"></div>
+  <div class="msg" id="loadMsg">מתחיל סריקה...</div>
+  <div class="small">סריקה חיה מול נתוני שוק אמיתיים — לוקח בערך 15–40 שניות</div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<footer>מידע בלבד, לא ייעוץ השקעות · הנתונים נכונים לרגע הסריקה האחרונה</footer>
+
+<script>
+/* ================== STATE ================== */
+let S = null; // {watchlist:[], discovery:[], reports:[], lastScan:null}
+
+/* ================== STORAGE ================== */
+async function loadState(){
+  const res = await fetch('/api/state');
+  if(res.status === 401){ location.href = '/login.html'; return; }
+  S = await res.json();
+  renderAll();
+}
+
+/* ================== RENDER ================== */
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtP(n){ return (n===null||n===undefined||isNaN(n)) ? '—' : '$'+Number(n).toLocaleString('en-US',{maximumFractionDigits:2}); }
+
+const STATUS = { hold:['מחזיקה','hold'], weak:['נחלשת','weak'], broken:['נשברה','broken'], check:['לבדיקה','check'] };
+const BOXLBL = { ind:'תעשייה עולה', best:'הכי טובה בענף', up:'מחיר בתנופה' };
+const MARK = { ok:'✓', warn:'⚠', fail:'✕' };
+
+function tvSymbol(st){
+  if(st.mkt==='TASE') return 'TASE:'+st.t;
+  if(st.mkt==='CRYPTO') return 'CRYPTO:'+st.t+'USD';
+  return st.t;
+}
+
+function gaugeHTML(st){
+  if(!st.trigger || !st.price) return '';
+  const trig = st.trigger, p = st.price;
+  const top = trig * 1.45; // scale: trigger .. +45%
+  let pct = ((p - trig) / (top - trig)) * 100;
+  pct = Math.max(0, Math.min(100, pct));
+  const dist = ((p - trig) / trig * 100);
+  const distTxt = dist >= 0
+    ? '<b>'+dist.toFixed(1)+'%</b> מעל הטריגר'
+    : '<b>'+Math.abs(dist).toFixed(1)+'%</b> מתחת לטריגר — נשברה';
+  return `
+  <div class="gauge" aria-label="מרחק מהטריגר">
+    <div class="lbls"><span>טריגר <bdi>${fmtP(trig)}</bdi></span><span>מרחק בטוח</span></div>
+    <div class="track"><div class="pin" style="inset-inline-start:${pct}%"></div></div>
+    <div class="hint">המחיר ${distTxt}${st.warn?` · אזהרה מתחת ל-<bdi>${fmtP(st.warn)}</bdi>`:''}</div>
+  </div>`;
+}
+
+function stockCard(st){
+  const [stTxt, stCls] = STATUS[st.status] || STATUS.check;
+  const chg = (st.chg===null||st.chg===undefined) ? '' :
+    `<span class="chg ${st.chg>=0?'up':'down'}"><bdi>${st.chg>=0?'+':''}${Number(st.chg).toFixed(1)}%</bdi></span>`;
+  const boxes = ['ind','best','up'].map(k=>{
+    const v = (st.boxes&&st.boxes[k])||'warn';
+    return `<div class="box ${v}"><div class="mark">${MARK[v]||'⚠'}</div><div class="lbl">${BOXLBL[k]}</div></div>`;
+  }).join('');
+  return `
+  <article class="card">
+    <div class="stock-top">
+      <div class="tkr"><bdi>${esc(st.t)}</bdi><small>${esc(st.name||'')}</small></div>
+      <div><span class="price"><bdi>${fmtP(st.price)}</bdi></span>${chg}</div>
+      <span class="badge ${stCls}">${stTxt}</span>
+    </div>
+    <div class="boxes">${boxes}</div>
+    ${gaugeHTML(st)}
+    ${st.note?`<div class="note">${esc(st.note)}</div>`:''}
+    <div class="meta-row">
+      ${st.earn?`<span class="chip earn">דוחות: ${esc(st.earn)}</span>`:''}
+      <span class="chip">${st.mkt==='US'?'ארה"ב':st.mkt==='TASE'?'ת"א':'קריפטו'}</span>
+      <a class="link-tv" href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSymbol(st))}" target="_blank" rel="noopener">גרף ב-TradingView ↗</a>
+      <button class="mini-btn" onclick="editTrigger('${st.id}')">ערוך טריגר</button>
+      <button class="mini-btn danger" onclick="removeStock('${st.id}')">הסר</button>
+    </div>
+  </article>`;
+}
+
+function discCard(c){
+  const v = c.verdict==='pass'?['עוברת את הסינון','pass']:c.verdict==='fail'?['נפסלת','fail']:['חלקית','partial'];
+  const boxes = ['ind','best','up'].map(k=>{
+    const val=(c.boxes&&c.boxes[k])||'warn';
+    return `<div class="box ${val}"><div class="mark">${MARK[val]}</div><div class="lbl">${BOXLBL[k]}</div></div>`;
+  }).join('');
+  return `
+  <article class="card">
+    <div class="stock-top">
+      <div class="tkr"><bdi>${esc(c.t)}</bdi><small>${esc(c.name||'')}</small></div>
+      <span class="verdict ${v[1]}">${v[0]}</span>
+    </div>
+    <div class="boxes">${boxes}</div>
+    ${c.note?`<div class="note">${esc(c.note)}</div>`:''}
+    <div class="meta-row">
+      ${c.date?`<span class="chip">${esc(c.date)}</span>`:''}
+      ${c.trigger?`<span class="chip">טריגר מוצע: <bdi>${fmtP(c.trigger)}</bdi></span>`:''}
+      <button class="mini-btn gold" onclick="promoteToWatch('${c.id}')">העבר למעקב ←</button>
+      <button class="mini-btn danger" onclick="removeDisc('${c.id}')">הסר</button>
+    </div>
+  </article>`;
+}
+
+function renderAll(){
+  const w = document.getElementById('watchList');
+  w.innerHTML = S.watchlist.length ? S.watchlist.map(stockCard).join('') : '<div class="empty">אין מניות במעקב. הוסף אחת למטה או הרץ ניתוח בלשונית גילוי.</div>';
+  const d = document.getElementById('discList');
+  d.innerHTML = S.discovery.length ? S.discovery.map(discCard).join('') : '<div class="empty">עוד אין מועמדות. הדבק סיכום למעלה — המניות שיעברו את הסינון יופיעו כאן.</div>';
+  const r = document.getElementById('reportArea');
+  if(S.reports.length){
+    const [latest, ...old] = S.reports;
+    r.innerHTML = `<article class="card"><div class="report-date">${esc(latest.date)}</div><div class="report-card">${esc(latest.text)}</div></article>` +
+      old.map(x=>`<details class="old-report"><summary>${esc(x.date)}</summary><div class="report-card">${esc(x.text)}</div></details>`).join('');
+  } else {
+    r.innerHTML = '<div class="empty">עוד אין דוחות. לחץ "סרוק עכשיו" — הדוח הראשון ייכתב אוטומטית.</div>';
+  }
+  document.getElementById('cntWatch').textContent = S.watchlist.length;
+  document.getElementById('cntDisc').textContent = S.discovery.length;
+  document.getElementById('lastScan').textContent = S.lastScan ? ('סריקה אחרונה: ' + S.lastScan) : 'עוד לא בוצעה סריקה — לחץ "סרוק עכשיו"';
+}
+
+/* ================== TABS ================== */
+function showTab(name){
+  const map = {watch:'sec-watch', disc:'sec-disc', report:'sec-report'};
+  for(const k in map){
+    document.getElementById(map[k]).hidden = (k!==name);
+    document.getElementById('tab-'+(k==='watch'?'watch':k==='disc'?'disc':'report')).setAttribute('aria-selected', k===name?'true':'false');
+  }
+}
+
+/* ================== LOADING / TOAST ================== */
+const LOAD_MSGS = ['בודק מחירים עדכניים...','משווה מול הטריגרים...','בודק יסודות ומגמת ענף...','כותב דוח...'];
+let loadTimer=null;
+function startLoading(msg){
+  const el=document.getElementById('loading');
+  el.hidden=false;
+  document.getElementById('loadMsg').textContent=msg||LOAD_MSGS[0];
+  let i=0;
+  loadTimer=setInterval(()=>{ i=(i+1)%LOAD_MSGS.length; document.getElementById('loadMsg').textContent=LOAD_MSGS[i]; },5000);
+}
+function stopLoading(){ clearInterval(loadTimer); document.getElementById('loading').hidden=true; }
+
+function toast(msg, err){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast'+(err?' err':''); t.hidden=false;
+  setTimeout(()=>{t.hidden=true;}, 4200);
+}
+
+async function apiFetch(url, options){
+  const res = await fetch(url, options);
+  if(res.status === 401){ location.href = '/login.html'; throw new Error('unauthorized'); }
+  return res;
+}
+
+/* -------- SCAN -------- */
+async function runScan(){
+  if(!S.watchlist.length){ toast('אין מניות במעקב', true); return; }
+  const btn=document.getElementById('scanBtn'); btn.disabled=true;
+  startLoading();
+  try{
+    const res = await apiFetch('/api/scan', { method:'POST' });
+    if(!res.ok) throw new Error('scan failed');
+    await loadState();
+    const broken = S.watchlist.filter(x=>x.status==='broken').length;
+    const weak = S.watchlist.filter(x=>x.status==='weak').length;
+    toast(broken? '🔴 יש מניה שנשברה — בדוק את המעקב' : weak? '🟡 יש היחלשות — בדוק את המעקב' : '🟢 הסריקה הושלמה — הכל מחזיק');
+    showTab('report');
+  }catch(e){
+    toast('הסריקה נכשלה — נסה שוב בעוד רגע', true);
+  }
+  stopLoading(); btn.disabled=false;
+}
+
+/* -------- FELIX / DISCOVERY ANALYZE -------- */
+async function analyzeFelix(){
+  const txt = document.getElementById('felixText').value.trim();
+  if(txt.length < 30){ toast('הדבק סיכום קודם', true); return; }
+  const btn=document.getElementById('felixBtn'); btn.disabled=true;
+  startLoading('מחלץ מניות מהסיכום...');
+  try{
+    const res = await apiFetch('/api/discovery/analyze', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ text: txt }),
+    });
+    if(!res.ok) throw new Error('analyze failed');
+    const out = await res.json();
+    await loadState();
+    document.getElementById('felixText').value='';
+    if(out.candidates && out.candidates.length){
+      toast('נוספו ' + out.candidates.length + ' מועמדות לגילוי');
+    } else {
+      toast('לא נמצאו מניות סחירות בסיכום', true);
+    }
+  }catch(e){
+    toast('הניתוח נכשל — נסה שוב', true);
+  }
+  stopLoading(); btn.disabled=false;
+}
+
+/* ================== CRUD ================== */
+async function addStock(){
+  const ticker = document.getElementById('addTkr').value.trim().toUpperCase();
+  const market = document.getElementById('addMkt').value;
+  const trigger = document.getElementById('addTrig').value;
+  if(!ticker){ toast('חסר טיקר', true); return; }
+  try{
+    const res = await apiFetch('/api/stocks', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ ticker, market, trigger }),
+    });
+    if(res.status === 409){ toast('כבר במעקב', true); return; }
+    if(!res.ok) throw new Error('add failed');
+    await loadState();
+    document.getElementById('addTkr').value=''; document.getElementById('addTrig').value='';
+    toast('נוספה. הרץ סריקה לעדכון מלא');
+  }catch(e){
+    toast('ההוספה נכשלה', true);
+  }
+}
+async function removeStock(id){
+  const st = S.watchlist.find(x=>x.id===id);
+  if(!confirm('להסיר את '+(st?st.t:'')+' מהמעקב?')) return;
+  await apiFetch('/api/stocks/'+id, { method:'DELETE' });
+  await loadState();
+}
+async function editTrigger(id){
+  const st = S.watchlist.find(x=>x.id===id); if(!st) return;
+  const v = prompt('טריגר שבירה חדש עבור '+st.t+' (מחיר):', st.trigger??'');
+  if(v===null) return;
+  await apiFetch('/api/stocks/'+id, {
+    method:'PATCH',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ trigger: v }),
+  });
+  await loadState();
+}
+async function promoteToWatch(id){
+  const res = await apiFetch('/api/discovery/'+id+'/promote', { method:'POST' });
+  if(res.status === 409){ toast('כבר במעקב', true); await loadState(); return; }
+  if(!res.ok){ toast('הקידום נכשל', true); return; }
+  const stock = await res.json();
+  await loadState();
+  toast(stock.t+' עברה למעקב — הרץ סריקה לטריגר מדויק');
+  showTab('watch');
+}
+async function removeDisc(id){
+  await apiFetch('/api/discovery/'+id, { method:'DELETE' });
+  await loadState();
+}
+
+/* ================== INIT ================== */
+loadState();
+</script>
+</body>
+</html>
