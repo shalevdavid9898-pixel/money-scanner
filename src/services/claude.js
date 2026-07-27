@@ -42,6 +42,8 @@ async function synthesizeScan(stocksData) {
 
 בנוסף כתוב "report": פסקה עברית קצרה (3-4 משפטים) שמסכמת מה השתנה, מי הכי חזקה, ומה דורש תשומת לב, על סמך הנתונים.
 
+כל הטקסטים (note, report) צריכים להיות טקסט רגיל בלבד — בלי תגיות HTML ובלי Markdown.
+
 נתוני המניות:
 ${JSON.stringify(stocksData)}`;
 
@@ -119,6 +121,8 @@ async function synthesizeDiscovery(candidatesData) {
 - box_best ("הכי טובה בענף"): לפי צמיחת הכנסות, שוליים ו-ROE. fail אם החברה לא רווחית.
 - note: משפט עברי קצר (עד 12 מילים).
 - trigger_suggestion: מחיר טריגר שבירה סביר (מעט מתחת לממוצע 200 יומי או לתמיכה טכנית), או null אם אין מספיק מידע.
+
+השדה note צריך להיות טקסט רגיל בלבד — בלי תגיות HTML ובלי Markdown.
 
 נתונים:
 ${JSON.stringify(candidatesData)}`;
