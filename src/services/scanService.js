@@ -85,6 +85,7 @@ async function runScan(kind = 'manual_scan') {
       boxes: boxesResult,
       note,
       earn,
+      earningsDateRaw: gd.earningsDateRaw ?? null,
     });
   }
 

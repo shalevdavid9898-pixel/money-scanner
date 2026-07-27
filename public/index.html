@@ -67,6 +67,7 @@
     padding:18px;margin-bottom:14px;
     animation:rise .4s ease both;
   }
+  .card.card-allok{border-color:var(--gold);box-shadow:0 0 0 1px rgba(232,196,104,.4),0 6px 24px rgba(232,196,104,.12)}
   @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
@@ -101,6 +102,7 @@
   .meta-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
   .chip{font-size:13px;color:var(--muted);background:rgba(11,15,23,.5);border:1px solid var(--line);border-radius:999px;padding:5px 12px}
   .chip.earn{color:var(--warn);border-color:rgba(251,191,36,.35)}
+  .chip.allok{color:var(--gold);border-color:rgba(232,196,104,.5);font-weight:600}
   .link-tv{font-size:13px;color:var(--gold);text-decoration:none;border:1px solid rgba(232,196,104,.35);border-radius:999px;padding:5px 12px;transition:background .15s}
   .link-tv:hover{background:rgba(232,196,104,.1)}
   .mini-btn{font-size:13px;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:5px 12px;cursor:pointer;font-family:'Heebo';min-height:34px}
@@ -251,6 +253,8 @@ function fmtP(n){ return (n===null||n===undefined||isNaN(n)) ? '—' : '$'+Numbe
 const STATUS = { hold:['מחזיקה','hold'], weak:['נחלשת','weak'], broken:['נשברה','broken'], check:['לבדיקה','check'] };
 const BOXLBL = { ind:'תעשייה עולה', best:'הכי טובה בענף', up:'מחיר בתנופה' };
 const MARK = { ok:'✓', warn:'⚠', fail:'✕' };
+const KIND_LABEL = { morning_auto:'🌅 דוח בוקר · ', hourly_auto:'⏱ סריקה אוטומטית · ', manual_scan:'' };
+function kindLabel(kind){ return KIND_LABEL[kind] ?? ''; }
 
 function tvSymbol(st){
   if(st.mkt==='TASE') return 'TASE:'+st.t;
@@ -284,8 +288,9 @@ function stockCard(st){
     const v = (st.boxes&&st.boxes[k])||'warn';
     return `<div class="box ${v}"><div class="mark">${MARK[v]||'⚠'}</div><div class="lbl">${BOXLBL[k]}</div></div>`;
   }).join('');
+  const allOk = st.boxes && st.boxes.ind==='ok' && st.boxes.best==='ok' && st.boxes.up==='ok';
   return `
-  <article class="card">
+  <article class="card${allOk?' card-allok':''}">
     <div class="stock-top">
       <div class="tkr"><bdi>${esc(st.t)}</bdi><small>${esc(st.name||'')}</small></div>
       <div><span class="price"><bdi>${fmtP(st.price)}</bdi></span>${chg}</div>
@@ -295,6 +300,7 @@ function stockCard(st){
     ${gaugeHTML(st)}
     ${st.note?`<div class="note">${esc(st.note)}</div>`:''}
     <div class="meta-row">
+      ${allOk?'<span class="chip allok">🟢 עומדת בכל שלושת הכללים</span>':''}
       ${st.earn?`<span class="chip earn">דוחות: ${esc(st.earn)}</span>`:''}
       <span class="chip">${st.mkt==='US'?'ארה"ב':st.mkt==='TASE'?'ת"א':'קריפטו'}</span>
       <a class="link-tv" href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSymbol(st))}" target="_blank" rel="noopener">גרף ב-TradingView ↗</a>
@@ -335,8 +341,8 @@ function renderAll(){
   const r = document.getElementById('reportArea');
   if(S.reports.length){
     const [latest, ...old] = S.reports;
-    r.innerHTML = `<article class="card"><div class="report-date">${esc(latest.date)}</div><div class="report-card">${esc(latest.text)}</div></article>` +
-      old.map(x=>`<details class="old-report"><summary>${esc(x.date)}</summary><div class="report-card">${esc(x.text)}</div></details>`).join('');
+    r.innerHTML = `<article class="card"><div class="report-date">${kindLabel(latest.kind)}${esc(latest.date)}</div><div class="report-card">${esc(latest.text)}</div></article>` +
+      old.map(x=>`<details class="old-report"><summary>${kindLabel(x.kind)}${esc(x.date)}</summary><div class="report-card">${esc(x.text)}</div></details>`).join('');
   } else {
     r.innerHTML = '<div class="empty">עוד אין דוחות. לחץ "סרוק עכשיו" — הדוח הראשון ייכתב אוטומטית.</div>';
   }

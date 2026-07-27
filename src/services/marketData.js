@@ -70,9 +70,12 @@ async function getFundamentals(ticker, market) {
   const fd = qs.financialData || {};
   const profile = qs.summaryProfile || {};
   let earningsDate = '';
+  let earningsDateRaw = null;
   const earnings = qs.calendarEvents?.earnings?.earningsDate;
   if (Array.isArray(earnings) && earnings[0]) {
-    earningsDate = new Date(earnings[0]).toLocaleDateString('he-IL', { day: 'numeric', month: 'long' });
+    const d = new Date(earnings[0]);
+    earningsDate = d.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' });
+    earningsDateRaw = d.toISOString();
   }
   return {
     revenueGrowth: fd.revenueGrowth ?? null,
@@ -82,6 +85,7 @@ async function getFundamentals(ticker, market) {
     sector: profile.sector || null,
     industry: profile.industry || null,
     earningsDate,
+    earningsDateRaw,
   };
 }
 
